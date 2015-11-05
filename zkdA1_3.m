@@ -1,5 +1,4 @@
-
-%环境变量设置
+%实验数据选择
 CntFolderName = 'CntFiles';
 SubjectName = 'zkd';
 ExpDate = '20151021';
@@ -8,57 +7,94 @@ WhichExp = 3;
 
 CntPath = [CntFolderName,filesep,SubjectName,filesep,ExpDate,filesep,ExpName,'-',num2str(WhichExp),'.cnt'];
 
+cfg = [];
+
+%原始数据读入
 cfg.dataset = CntPath;
 
+data0_original  = ft_preprocessing(cfg);
+
+%原始数据显示
 cfg.viewmode = 'vertical';
+cfg.fontsize = 0.02;
+cfg.blocksize = 10;
+cfg = ft_databrowser(cfg);
 
-ft_databrowser(cfg);
+
+%去掉不用的通道
+cfg.channel = {'all','-HEO','-VEO','-EKG','-EMG'};
+
+data1_SelectChannel = ft_preprocessing(cfg);
 
 
-cfg = [];
+%低通滤波滤除100Hz以上噪声(肌电)
+cfg.lpfilter = 'yes';
+cfg.lpfreq = 100;
+
+data2_LpFiltered =  ft_preprocessing(cfg);
+
+
+%滤波前后数据对比(前4096点)
+figure;
+Y1 = fft(data1_SelectChannel.trial{1}(1,1:4096));
+Y2 = fft(data2_LpFiltered.trial{1}(1,1:4096));
+f = linspace(0,500,2048);
+
+plot(f,abs(Y1(1:2048)),'b');
+hold on;
+plot(f,abs(Y2(1:2048)),'r');
+
 
 %处理event
 event = ft_read_event(CntPath);
-cellzero = num2cell(zeros(1,20));
-[event(7:6:121).value]= cellzero{:};
+zerocell = num2cell(zeros(1,20));
+[event(7:6:121).value]= zerocell{:};
 cfg.event = event;
 
-%读入数据并分段
 
+
+
+%数据分段
 cfg.trialdef.eventtype = 'trigger';
 cfg.trialdef.eventvalue = 1:20;
 cfg.trialdef.prestim = 1;
 cfg.trialdef.poststim = 6; 
 cfg.trialfun = 'ft_trialfun_general';
 
+cfg.continuous = 'yes';
+
 cfg = ft_definetrial(cfg); 
-data1_trial  =  ft_preprocessing(cfg);
+data3_trial  =  ft_preprocessing(cfg);
 
-%导联选择(去除HEO VEO EKG 3个没有采集的导联)
-cfg.channel = [1:64,68];
+%显示分段后数据
 
-data2_SelectedChannel = ft_preprocessing(cfg);
+cfg.viewmode = 'vertical';
+cfg.fontsize = 0.02;
+cfg.blocksize = 10;
+
+ft_databrowser(cfg,data3_trial);
+
 
 %滤除工频干扰
 cfg.dftfilter = 'yes';
 cfg.dftfreq = 50;
-cfg.continuous = 'yes';
 cfg.padtype = 'data';
 cfg.padding = 10;
 
 
-data3_notched = ft_preprocessing(cfg);
+data4_notched = ft_preprocessing(cfg);
+%滤波前后数据对比(trial1前4096点)
 figure;
-y1 = fft(data2_SelectedChannel.trial{1}(1,1:4096));
-y2 = fft(data3_notched.trial{1}(1,1:4096));
+Y1 = fft(data3_trial.trial{1}(1,1:4096));
+Y2 = fft(data4_notched.trial{1}(1,1:4096));
 
-plot(abs(y1(1:2048)));
+plot(f,abs(Y1(1:2048)));
 hold on;
-plot(abs(y2(1:2048)),'r');
+plot(f,abs(Y2(1:2048)),'r');
 
-%jump
-% channel selection, cutoff and padding
-cfg.artfctdef.zvalue.channel = [1:64,68];
+%用z阈值检测jump伪迹
+
+cfg.artfctdef.zvalue.channel = {'all','-HEO','-VEO','-EKG','-EMG'};
 cfg.artfctdef.zvalue.cutoff = 20;
 cfg.artfctdef.zvalue.trlpadding = 0;
 cfg.artfctdef.zvalue.artpadding = 0;
@@ -75,12 +111,9 @@ cfg.artfctdef.zvalue.interactive = 'yes';
 %  [cfg, data4_rejectzvalue] =
  ft_artifact_zvalue(cfg);
 
-plot(data1_trial.trial{1}(57,2000:3000));
 
 
-
-
-%肌电
+%用z阈值检测肌电伪迹
 % channel selection, cutoff and padding
 cfg.artfctdef.zvalue.channel = [1:64,68];
 cfg.artfctdef.zvalue.cutoff = 4;
