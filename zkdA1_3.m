@@ -27,7 +27,7 @@ cfg.channel = {'all','-HEO','-VEO','-EKG','-EMG'};
 data1_SelectChannel = ft_preprocessing(cfg);
 
 cfg.reref = 'yes';
-cfg.refchannel = 'all';
+cfg.refchannel = {'all','-HEO','-VEO','-EKG','-EMG'};
 
 data2_CAR = ft_preprocessing(cfg);
 
@@ -37,10 +37,8 @@ data2_CAR = ft_preprocessing(cfg);
 cfg.lpfilter = 'yes';
 cfg.lpfreq = 100;
 
-data3_LpFiltered =  ft_preprocessing(cfg);
+data3_LpFiltered = ft_preprocessing(cfg);
 
-cfg.lpfilter = [];
-cfg.lpfreq = [];
 
 
 %滤波前后数据对比(前4096点)
@@ -52,7 +50,7 @@ f = linspace(0,500,2048);
 plot(f,abs(Y1(1:2048)),'b');
 hold on;
 plot(f,abs(Y2(1:2048)),'r');
-
+hold off;
 
 %处理event
 event = ft_read_event(CntPath);
@@ -93,10 +91,6 @@ cfg.padding = 10;
 
 data5_notched = ft_preprocessing(cfg);
 
-cfg.dftfilter = [];
-cfg.dftfreq = [];
-cfg.padtype = [];
-cfg.padding = [];
 
 
 %滤波前后数据对比(trial1前4096点)
@@ -107,6 +101,7 @@ Y2 = fft(data5_notched.trial{1}(1,1:4096));
 plot(f,abs(Y1(1:2048)));
 hold on;
 plot(f,abs(Y2(1:2048)),'r');
+hold off;
 
 %用z阈值检测jump伪迹
 
@@ -131,7 +126,7 @@ cfg.artfctdef.zvalue.interactive = 'yes';
 
 %用z阈值检测肌电伪迹
 % channel selection, cutoff and padding
-cfg.artfctdef.zvalue.channel = [1:64,68];
+cfg.artfctdef.zvalue.channel = {'all','-HEO','-VEO','-EKG','-EMG'};
 cfg.artfctdef.zvalue.cutoff = 4;
 cfg.artfctdef.zvalue.trlpadding = 0;
 cfg.artfctdef.zvalue.artpadding = 0.1;
@@ -154,7 +149,7 @@ cfg.artfctdef.zvalue.interactive = 'yes';
 %眼电
 
 % channel selection, cutoff and padding
-cfg.artfctdef.zvalue.channel     = [1:64,68];
+cfg.artfctdef.zvalue.channel     =  {'all','-HEO','-VEO','-EKG','-EMG'};
 cfg.artfctdef.zvalue.cutoff      = 4;
 cfg.artfctdef.zvalue.trlpadding  = 0;
 cfg.artfctdef.zvalue.artpadding  = 0.1;
@@ -183,35 +178,38 @@ data6_demeaned = ft_preprocessing(cfg);
 
 
 %detrend
-cfg = [];
+
 cfg.detrend = 'yes';
 data7_detrended = ft_preprocessing(cfg);
 
 figure;
-plot(data5_notched.trial{1}(1,1:5000));
+plot(data5_notched.trial{1}(1,1:7000),'b');
 hold on;
-plot(data6_demeaned.trial{1}(1,1:5000));
-plot(data7_detrended.trial{1}(1,1:5000));
+plot(data6_demeaned.trial{1}(1,1:7000),'g');
+plot(data7_detrended.trial{1}(1,1:7000),'r');
 hold off;
 
-
+cfgbackup = cfg;
 % cfg = [];
 %ICA去眼电
 cfg.method = 'runica';
-comp = ft_componentanalysis(cfg, data7_detrended);
+
+IcaComp = ft_componentanalysis(cfg,data1_SelectChannel);
+
+cfg = rmfield(cfg,'method');
 
 cfg.component = 1:8;       % specify the component(s) that should be plotted
 cfg.layout    = 'quickcap64.mat'; % specify the layout file that should be used for plotting
-cfg.comment   = 'yes';
-cfg = ft_topoplotIC(cfg, comp);
+cfg.comment   = 'no';
+cfg = ft_topoplotIC(cfg, IcaComp );
 
 
 cfg.component = 1:64;       % specify the component(s) that should be plotted
 cfg.viewmode = 'component';
-cfg = ft_databrowser(cfg, comp);
+cfg = ft_databrowser(cfg, IcaComp );
 
-cfg.component = [29]; % to be removed component(s)
-data8_EOGRemove = ft_rejectcomponent(cfg, comp,  data7_detrended);
+cfg.component = 24; % to be removed component(s)
+data8_EOGRemove = ft_rejectcomponent(cfg, IcaComp,  data7_detrended);
 
 cfg.viewmode = 'vertical';
 
@@ -221,7 +219,7 @@ ft_databrowser(cfg, data8_EOGRemove);
 
 cfg.method = 'channel';
 % data6_rejected = 
-ft_rejectvisual(cfg,data4_notched );
+ft_rejectvisual(cfg);
 
 cfg.method = 'trial';
 % data6_rejected = 
