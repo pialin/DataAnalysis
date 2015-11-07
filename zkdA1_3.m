@@ -26,18 +26,27 @@ cfg.channel = {'all','-HEO','-VEO','-EKG','-EMG'};
 
 data1_SelectChannel = ft_preprocessing(cfg);
 
+cfg.reref = 'yes';
+cfg.refchannel = 'all';
+
+data2_CAR = ft_preprocessing(cfg);
+
+
 
 %低通滤波滤除100Hz以上噪声(肌电)
 cfg.lpfilter = 'yes';
 cfg.lpfreq = 100;
 
-data2_LpFiltered =  ft_preprocessing(cfg);
+data3_LpFiltered =  ft_preprocessing(cfg);
+
+cfg.lpfilter = [];
+cfg.lpfreq = [];
 
 
 %滤波前后数据对比(前4096点)
 figure;
-Y1 = fft(data1_SelectChannel.trial{1}(1,1:4096));
-Y2 = fft(data2_LpFiltered.trial{1}(1,1:4096));
+Y1 = fft(data2_CAR.trial{1}(1,1:4096));
+Y2 = fft(data3_LpFiltered.trial{1}(1,1:4096));
 f = linspace(0,500,2048);
 
 plot(f,abs(Y1(1:2048)),'b');
@@ -64,7 +73,7 @@ cfg.trialfun = 'ft_trialfun_general';
 cfg.continuous = 'yes';
 
 cfg = ft_definetrial(cfg); 
-data3_trial  =  ft_preprocessing(cfg);
+data4_trial  =  ft_preprocessing(cfg);
 
 %显示分段后数据
 
@@ -72,7 +81,7 @@ cfg.viewmode = 'vertical';
 cfg.fontsize = 0.02;
 cfg.blocksize = 10;
 
-ft_databrowser(cfg,data3_trial);
+ft_databrowser(cfg,data4_trial);
 
 
 %滤除工频干扰
@@ -82,11 +91,18 @@ cfg.padtype = 'data';
 cfg.padding = 10;
 
 
-data4_notched = ft_preprocessing(cfg);
+data5_notched = ft_preprocessing(cfg);
+
+cfg.dftfilter = [];
+cfg.dftfreq = [];
+cfg.padtype = [];
+cfg.padding = [];
+
+
 %滤波前后数据对比(trial1前4096点)
 figure;
-Y1 = fft(data3_trial.trial{1}(1,1:4096));
-Y2 = fft(data4_notched.trial{1}(1,1:4096));
+Y1 = fft(data4_trial.trial{1}(1,1:4096));
+Y2 = fft(data5_notched.trial{1}(1,1:4096));
 
 plot(f,abs(Y1(1:2048)));
 hold on;
@@ -108,7 +124,7 @@ cfg.artfctdef.zvalue.absdiff       = 'yes';
  
 % make the process interactive
 cfg.artfctdef.zvalue.interactive = 'yes';
-%  [cfg, data4_rejectzvalue] =
+%  [cfg, artifact_Jump] =
  ft_artifact_zvalue(cfg);
 
 
@@ -131,7 +147,7 @@ cfg.artfctdef.zvalue.boxcar      = 0.2;
 
 % make the process interactive
 cfg.artfctdef.zvalue.interactive = 'yes';
-%  [cfg, data4_rejectzvalue] =
+%  [cfg, artifact_EMG] =
  ft_artifact_zvalue(cfg);
 
 
@@ -147,9 +163,9 @@ cfg.artfctdef.zvalue.fltpadding  = 0;
 % algorithmic parameters
 cfg.artfctdef.zvalue.bpfilter   = 'yes';
 cfg.artfctdef.zvalue.bpfilttype = 'but';
-cfg.artfctdef.zvalue.bpfreq     = [1 15];
+cfg.artfctdef.zvalue.bpfreq = [1 15];
 cfg.artfctdef.zvalue.bpfiltord  = 4;
-cfg.artfctdef.zvalue.hilbert    = 'yes';
+cfg.artfctdef.zvalue.hilbert  = 'yes';
 
 % feedback
 cfg.artfctdef.zvalue.interactive = 'yes';
@@ -158,102 +174,80 @@ cfg.artfctdef.zvalue.interactive = 'yes';
 ft_artifact_zvalue(cfg);
 
 
-cfg.method = 'channel';
-data6_rejected = ft_rejectvisual(cfg,data5_detrended);
-
-cfg.method = 'trial';
-data6_rejected = ft_rejectvisual(cfg,data6_rejected);
-
-cfg.method ='summary';
-data6_rejected = ft_rejectvisual(cfg,data6_rejected);
-
-
-cfg.dftfilter = 'no';
-
-
-
-cfg.viewmode = 'butterfly';
-cfg.blocksize = 7;
-cfg.fontsize = 0.02;
-ft_databrowser(cfg,data1_trial);
-
-
-
-
-cfg = [];
-cfg.channel =  1:64;
-cfg.method = 'runica';
-comp = ft_componentanalysis(cfg, data3_notched);
-
-cfg.component = [1:64];       % specify the component(s) that should be plotted
-cfg.layout    = 'quickcap64.mat'; % specify the layout file that should be used for plotting
-cfg.comment   = 'no';
-cfg = ft_topoplotIC(cfg, comp);
-
-
-
-cfg.viewmode = 'component';
-cfg = ft_databrowser(cfg, comp);
-
-cfg.component = [29]; % to be removed component(s)
-data4_EOGReject = ft_rejectcomponent(cfg, comp, data3_notched);
-
-
-cfg.channel =  1:65;
-cfg.viewmode = 'vertical';
-ft_databrowser(cfg, data4_EOGReject);
-
-
-figure;
-plot(data3_notched.trial{1}(58,1:7000));
-hold on;
-plot(data4_EOGReject.trial{1}(58,1:7000));
-
-
-figure
-plot(comp.trial{1}(35,:))
-figure
-y=fft(data4_EOGReject.trial{1}(58,:));
-f=linspace(1,500,3500);
-plot(f,abs(y(1:3500)));
-
-
-
-
+% cfg = ft_rejectartifact(cfg);
 
 %demean
 cfg.demean='yes';
 cfg.baselinewindow = [-1,0];
-data4_demeaned = ft_preprocessing(cfg);
-
-plot(data3_notched.trial{1}(1,1:5000));
-hold on;
-plot(data4_demeaned.trial{1}(1,1:5000));
-
+data6_demeaned = ft_preprocessing(cfg);
 
 
 %detrend
 cfg = [];
 cfg.detrend = 'yes';
-data5_detrended = ft_preprocessing(cfg);
+data7_detrended = ft_preprocessing(cfg);
 
-
-plot(data4_demeaned.trial{1}(1,1:5000));
+figure;
+plot(data5_notched.trial{1}(1,1:5000));
 hold on;
-plot(data5_detrended.trial{1}(1,1:5000));
+plot(data6_demeaned.trial{1}(1,1:5000));
+plot(data7_detrended.trial{1}(1,1:5000));
+hold off;
+
+
+% cfg = [];
+%ICA去眼电
+cfg.method = 'runica';
+comp = ft_componentanalysis(cfg, data7_detrended);
+
+cfg.component = 1:8;       % specify the component(s) that should be plotted
+cfg.layout    = 'quickcap64.mat'; % specify the layout file that should be used for plotting
+cfg.comment   = 'yes';
+cfg = ft_topoplotIC(cfg, comp);
+
+
+cfg.component = 1:64;       % specify the component(s) that should be plotted
+cfg.viewmode = 'component';
+cfg = ft_databrowser(cfg, comp);
+
+cfg.component = [29]; % to be removed component(s)
+data8_EOGRemove = ft_rejectcomponent(cfg, comp,  data7_detrended);
+
+cfg.viewmode = 'vertical';
+
+ft_databrowser(cfg, data8_EOGRemove);
 
 
 
+cfg.method = 'channel';
+% data6_rejected = 
+ft_rejectvisual(cfg,data4_notched );
+
+cfg.method = 'trial';
+% data6_rejected = 
+ft_rejectvisual(cfg);
+
+cfg.method ='summary';
+%data6_rejected = 
+ft_rejectvisual(cfg);
+
+
+
+
+
+
+
+
+% cfg = [];
+
+ERP  = ft_timelockanalysis(cfg, data8_EOGRemove);
 cfg = [];
-cfg.channel  = [1:64];
-tl  = ft_timelockanalysis(cfg, data1_trial);
-cfg                 = [];
-cfg.showlabels      = 'yes';
-cfg.showoutline     = 'yes';
-cfg.layout          = 'quickcap64.mat';
+cfg.showlabels = 'yes';
+cfg.showoutline = 'yes';
+cfg.layout = 'quickcap64.mat';
 
-ft_multiplotER(cfg, tl);
-ft_topoplotER(cfg,tl);
+ft_multiplotER(cfg, ERP);
+ft_topoplotER(cfg,ERP);
 
 
 
