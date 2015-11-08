@@ -1,4 +1,7 @@
+
 %实验数据选择
+cd E:\Documents\Git\DataAnalysis\;
+
 CntFolderName = 'CntFiles';
 SubjectName = 'zkd';
 ExpDate = '20151021';
@@ -189,12 +192,11 @@ plot(data6_demeaned.trial{1}(1,1:7000),'g');
 plot(data7_detrended.trial{1}(1,1:7000),'r');
 hold off;
 
-cfgbackup = cfg;
 % cfg = [];
 %ICA去眼电
 cfg.method = 'runica';
-
-IcaComp = ft_componentanalysis(cfg,data1_SelectChannel);
+cfg.demean = 'no';
+IcaComp = ft_componentanalysis(cfg,data7_detrended);
 
 cfg = rmfield(cfg,'method');
 
@@ -203,31 +205,45 @@ cfg.layout    = 'quickcap64.mat'; % specify the layout file that should be used 
 cfg.comment   = 'no';
 cfg = ft_topoplotIC(cfg, IcaComp );
 
-
+cfg = rmfield(cfg,'channel');
 cfg.component = 1:64;       % specify the component(s) that should be plotted
 cfg.viewmode = 'component';
-cfg = ft_databrowser(cfg, IcaComp );
+cfg.blocksize = 7;
+cfg.continuous = 'no'; 
+cfg = ft_databrowser(cfg, IcaComp);
 
-cfg.component = 24; % to be removed component(s)
+Y = fft(IcaComp.trial{3}(64,1:4096));
+f = linspace(1,500,2048);
+plot(f,abs(Y(1:2048)));
+
+
+cfg.component = [19,64]; % to be removed component(s)
 data8_EOGRemove = ft_rejectcomponent(cfg, IcaComp,  data7_detrended);
+
+cfg.channel = {'all','-HEO','-VEO','-EKG','-EMG'};
 
 cfg.viewmode = 'vertical';
 
-ft_databrowser(cfg, data8_EOGRemove);
-
-
-
+ft_databrowser(cfg, data8_EOGRemove); 
+figure;
+plot(data7_detrended.trial{6}(1,:));
+hold on;
+plot(data8_EOGRemove.trial{6}(1,:),'r');
+hold off;
+figure;
 cfg.method = 'channel';
 % data6_rejected = 
-ft_rejectvisual(cfg);
+ft_rejectvisual(cfg,data8_EOGRemove);
 
+ft_rejectvisual(cfg,data7_detrended);
 cfg.method = 'trial';
 % data6_rejected = 
-ft_rejectvisual(cfg);
+ft_rejectvisual(cfg,data8_EOGRemove);
 
 cfg.method ='summary';
+cfg = rmfield(cfg,'viewmode');
 %data6_rejected = 
-ft_rejectvisual(cfg);
+ft_rejectvisual(cfg,data7_detrended);
 
 
 
@@ -239,13 +255,16 @@ ft_rejectvisual(cfg);
 % cfg = [];
 
 ERP  = ft_timelockanalysis(cfg, data8_EOGRemove);
-cfg = [];
 cfg.showlabels = 'yes';
 cfg.showoutline = 'yes';
-cfg.layout = 'quickcap64.mat';
+cfg.baseline = [-1,0];
+cfg.baselinetype  = 'relative';
 
+figure;
 ft_multiplotER(cfg, ERP);
 ft_topoplotER(cfg,ERP);
+
+
 
 
 
