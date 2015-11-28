@@ -61,9 +61,6 @@ zerocell = num2cell(zeros(1,20));
 [event(7:6:121).value]= zerocell{:};
 cfg.event = event;
 
-
-
-
 %数据分段
 cfg.trialdef.eventtype = 'trigger';
 cfg.trialdef.eventvalue = 1:20;
@@ -192,11 +189,16 @@ plot(data6_demeaned.trial{1}(1,1:7000),'g');
 plot(data7_detrended.trial{1}(1,1:7000),'r');
 hold off;
 
+
+
+cfgbackup = cfg;
+
 % cfg = [];
 %ICA去眼电
 cfg.method = 'runica';
 cfg.demean = 'no';
 IcaComp = ft_componentanalysis(cfg,data7_detrended);
+
 
 cfg = rmfield(cfg,'method');
 
@@ -205,12 +207,14 @@ cfg.layout    = 'quickcap64.mat'; % specify the layout file that should be used 
 cfg.comment   = 'no';
 cfg = ft_topoplotIC(cfg, IcaComp );
 
+
+
 cfg = rmfield(cfg,'channel');
 cfg.component = 1:64;       % specify the component(s) that should be plotted
 cfg.viewmode = 'component';
-cfg.blocksize = 7;
-cfg.continuous = 'no'; 
-cfg = ft_databrowser(cfg, IcaComp);
+
+cfg = ft_databrowser(cfg, IcaComp );
+
 
 Y = fft(IcaComp.trial{3}(64,1:4096));
 f = linspace(1,500,2048);
@@ -233,7 +237,11 @@ hold off;
 figure;
 cfg.method = 'channel';
 % data6_rejected = 
-ft_rejectvisual(cfg,data8_EOGRemove);
+
+
+
+
+ft_rejectvisual(cfg);
 
 ft_rejectvisual(cfg,data7_detrended);
 cfg.method = 'trial';
