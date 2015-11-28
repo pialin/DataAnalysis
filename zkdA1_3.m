@@ -189,11 +189,20 @@ plot(data6_demeaned.trial{1}(1,1:7000),'g');
 plot(data7_detrended.trial{1}(1,1:7000),'r');
 hold off;
 
+<<<<<<< HEAD
 % cfg = [];
 %ICA去眼电
 cfg.method = 'runica';
 cfg.demean = 'no';
 IcaComp = ft_componentanalysis(cfg,data7_detrended);
+=======
+cfgbackup = cfg;
+% cfg = [];
+%ICA去眼电
+cfg.method = 'runica';
+
+IcaComp = ft_componentanalysis(cfg,data1_SelectChannel);
+>>>>>>> refs/remotes/origin/HEAD
 
 cfg = rmfield(cfg,'method');
 
@@ -201,10 +210,15 @@ cfg.component = 1:8;       % specify the component(s) that should be plotted
 cfg.layout    = 'quickcap64.mat'; % specify the layout file that should be used for plotting
 cfg.comment   = 'no';
 cfg = ft_topoplotIC(cfg, IcaComp );
+<<<<<<< HEAD
+=======
+
+>>>>>>> refs/remotes/origin/HEAD
 
 cfg = rmfield(cfg,'channel');
 cfg.component = 1:64;       % specify the component(s) that should be plotted
 cfg.viewmode = 'component';
+<<<<<<< HEAD
 cfg.blocksize = 7;
 cfg.continuous = 'no'; 
 cfg = ft_databrowser(cfg, IcaComp);
@@ -212,6 +226,12 @@ cfg = ft_databrowser(cfg, IcaComp);
 Y = fft(IcaComp.trial{3}(64,1:4096));
 f = linspace(1,500,2048);
 plot(f,abs(Y(1:2048)));
+=======
+cfg = ft_databrowser(cfg, IcaComp );
+
+cfg.component = 24; % to be removed component(s)
+data8_EOGRemove = ft_rejectcomponent(cfg, IcaComp,  data7_detrended);
+>>>>>>> refs/remotes/origin/HEAD
 
 
 cfg.component = [19,64]; % to be removed component(s)
@@ -230,7 +250,11 @@ hold off;
 figure;
 cfg.method = 'channel';
 % data6_rejected = 
+<<<<<<< HEAD
 ft_rejectvisual(cfg,data8_EOGRemove);
+=======
+ft_rejectvisual(cfg);
+>>>>>>> refs/remotes/origin/HEAD
 
 ft_rejectvisual(cfg,data7_detrended);
 cfg.method = 'trial';
