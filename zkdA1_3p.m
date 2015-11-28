@@ -3,7 +3,7 @@
 clear;
 %%
 %实验数据选择
-cd D:\Documents\Git\DataAnalysis\;
+cd E:\Documents\Git\DataAnalysis\;
 
 CntFolderName = 'CntFiles';
 SubjectName = 'zkd';
@@ -11,7 +11,7 @@ ExpDate = '20151021';
 ExpName = 'A1';
 WhichExp = 3;
 
-CntPath = [CntFolderName,filesep,SubjectName,filesep,ExpDate,filesep,ExpName,'-',num2str(WhichExp),'.cnt'];
+CntPath = [CntFolderName,filesep,SubjectName,filesep,ExpDate,filesep,ExpName,'_',num2str(WhichExp),'.cnt'];
 
 %%
 %数据分段(只计算trial起点和重点，并未实际进行数据的截取)
@@ -144,7 +144,7 @@ data1_ContinPreproc = ft_preprocessing(cfg);
 % plot(data1_ContinPreproc.trial{1}(1, 22204:29203),'g')
 % plot(data2_ContinPreproc.trial{1}(1,:),'b');
 % hold off;
-
+figure;
 cfg = [];
 cfg.viewmode = 'vertical';
 cfg.fontsize = 0.02;
@@ -159,6 +159,8 @@ cfg.trl = trl ;
 
 data2_TrialPreproc = ft_redefinetrial(cfg,data1_ContinPreproc);
 
+
+
 %%
 %工频陷波
 cfg = [];
@@ -171,6 +173,13 @@ cfg.continuous = 'no';
 
 data2_TrialPreproc = ft_preprocessing(cfg,data2_TrialPreproc);
 
+
+cfg = [];
+cfg.viewmode = 'vertical';
+cfg.fontsize = 0.02;
+cfg.blocksize = 7;
+ft_databrowser(cfg,data2_TrialPreproc);
+
 %%
 %ICA去眼电
 cfg = [];
@@ -179,20 +188,15 @@ cfg.method = 'runica';
 IcaComp = ft_componentanalysis(cfg,data2_TrialPreproc);
 
 cfg.layout    = 'quickcap64.mat';
-
-% cfg.component = 1:8;       % specify the component(s) that should be plotted
-%  % specify the layout file that should be used for plotting
-% cfg.comment   = 'no';
-% ft_topoplotIC(cfg, IcaComp );
-
-
+cfg.comment   = 'no';
 cfg.component = 1:60;       % specify the component(s) that should be plotted
 cfg.viewmode = 'component';
 
 cfg.blocksize = 7;
-cfg = ft_databrowser(cfg, IcaComp);
+ft_databrowser(cfg, IcaComp);
 
-cfg.component = 17; % to be removed component(s)
+cfg = [];
+cfg.component = 20; % to be removed component(s)
 data3_ICA = ft_rejectcomponent(cfg, IcaComp,  data2_TrialPreproc);
 
 cfg = [];
@@ -238,16 +242,16 @@ cfg.layout    = 'quickcap64.mat';
 cfg.showlabels = 'yes';
 cfg.showoutline = 'yes';
 cfg.baseline = [-1,0];
-cfg.baselinetype  = 'relative';
+cfg.baselinetype  = 'absolute';
 
 ft_multiplotER(cfg, ERP);
 
-for iTime = -1 :5
-    cfg.xlim = [iTime,iTime+1];
-    figure;
-    title(num2str(iTime));
-    ft_topoplotER(cfg,ERP);
-end
+cfg = [];
+cfg.layout = 'quickcap64.mat';
+cfg.baseline = [-1,0];
+cfg.baselinetype  = 'absolute';
+cfg.xlim = -1:1:6;
+ft_topoplotER(cfg,ERP);
 
 
 cfg = [];
@@ -258,23 +262,37 @@ cfg.foi        = 2:2:50;
 cfg.t_ftimwin  = 5./cfg.foi;
 cfg.tapsmofrq  = 0.4 *cfg.foi;
 cfg.toi        = -1:0.1:6;
-TFRmult = ft_freqanalysis(cfg, data3_AfterDemean);
+TFRmult = ft_freqanalysis(cfg, data4_Demean);
 
 cfg = [];
-cfg.ylim  = [5 15];
-cfg.baseline     = [-1 0];  
+cfg.ylim  = [2 50];
+cfg.baseline = [-1 0];  
 cfg.baselinetype = 'absolute';	        
-cfg.showlabels   = 'yes';	        
-cfg.layout       = 'quickcap64.mat';
-figure;
-ft_multiplotTFR(cfg, TFmult);
+cfg.layout = 'quickcap64.mat';
+cfg.showoutline = 'yes';
 
-for iTime = -1:5
-    cfg.xlim = [iTime,iTime+1];
-    figure;
-    title(num2str(iTime));
-    ft_topoplotTFR(cfg, TFmult);
-end
+ft_multiplotTFR(cfg, TFRmult);
+
+cfg = [];
+cfg.xlim = [-1 0:0.5:3];
+cfg.ylim  = [6 8];
+cfg.baseline = [-1 0];  
+cfg.baselinetype = 'absolute';	        
+cfg.layout = 'quickcap64.mat';
+cfg.showoutline = 'yes';
+
+ft_topoplotTFR(cfg, TFRmult);
+
+cfg = [];
+cfg.xlim = -1:0.5:3;
+cfg.ylim  = [10 15];
+cfg.baseline = [-1 0];  
+cfg.baselinetype = 'absolute';	             
+cfg.layout = 'quickcap64.mat';
+cfg.showoutline = 'yes';
+figure;
+ft_topoplotTFR(cfg, TFRmult);
+
 
 
 
