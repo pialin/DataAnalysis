@@ -1,14 +1,15 @@
-%zkdA1_3.cnt分析脚本
+%zkdA1_2.cnt分析脚本
 
 clear;
 %%
 %实验数据选择
 
+
 CntFolderName = 'CntFiles';
 SubjectName = 'zkd';
 ExpDate = '20151021';
 ExpName = 'A1';
-WhichExp = 3;
+WhichExp = 2;
 
 CntPath = [CntFolderName,filesep,SubjectName,filesep,ExpDate,filesep,ExpName,'_',num2str(WhichExp),'.cnt'];
 
@@ -65,7 +66,7 @@ cfg.artfctdef.zvalue.absdiff       = 'yes';
 cfg.artfctdef.zvalue.interactive = 'yes';
 %  [cfg, Artifact_Jump] =
 ft_artifact_zvalue(cfg);
-
+% cfg = ft_rejectartifact(cfg);
 
 
 %用z阈值检测肌电伪迹
@@ -87,7 +88,7 @@ cfg.artfctdef.zvalue.boxcar      = 0.2;
 cfg.artfctdef.zvalue.interactive = 'yes';
 %  [cfg, Artifact_EMG] =
 ft_artifact_zvalue(cfg);
-
+% cfg = ft_rejectartifact(cfg);
 
 %用z阈值检测眼电伪迹
 % channel selection, cutoff and padding
@@ -143,7 +144,6 @@ data1_ContinPreproc = ft_preprocessing(cfg);
 % plot(data1_ContinPreproc.trial{1}(1, 22204:29203),'g')
 % plot(data2_ContinPreproc.trial{1}(1,:),'b');
 % hold off;
-figure;
 cfg = [];
 cfg.viewmode = 'vertical';
 cfg.fontsize = 0.02;
@@ -182,7 +182,7 @@ ft_databrowser(cfg,data2_TrialPreproc);
 %%
 %ICA去眼电
 cfg = [];
-
+cfg.demean = 'no';
 cfg.method = 'runica';
 IcaComp = ft_componentanalysis(cfg,data2_TrialPreproc);
 
@@ -195,7 +195,7 @@ cfg.blocksize = 7;
 ft_databrowser(cfg, IcaComp);
 
 cfg = [];
-cfg.component = 20; % to be removed component(s)
+cfg.component = []; % to be removed component(s)
 data3_ICA = ft_rejectcomponent(cfg, IcaComp,  data2_TrialPreproc);
 
 cfg = [];
@@ -266,10 +266,10 @@ TFRmult = ft_freqanalysis(cfg, data4_Demean);
 cfg = [];
 cfg.ylim  = [2 50];
 cfg.baseline = [-1 0];  
-cfg.baselinetype = 'absolute';	        
+cfg.baselinetype = 'relative';	        
 cfg.layout = 'quickcap64.mat';
 cfg.showoutline = 'yes';
-
+cfg.showlabels = 'yes';
 ft_multiplotTFR(cfg, TFRmult);
 
 cfg = [];
@@ -291,8 +291,3 @@ cfg.layout = 'quickcap64.mat';
 cfg.showoutline = 'yes';
 figure;
 ft_topoplotTFR(cfg, TFRmult);
-
-
-
-
- 
