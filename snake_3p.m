@@ -1,5 +1,5 @@
-%zkdA1_2.cnt分析脚本
-
+%zkdSnake1分析脚本
+clc;
 clear;
 %%
 %实验数据选择
@@ -8,8 +8,8 @@ clear;
 CntFolderName = 'CntFiles';
 SubjectName = 'zkd';
 ExpDate = '20151021';
-ExpName = 'A1';
-WhichExp = 2;
+ExpName = 'snake';
+WhichExp = 3;
 
 CntPath = [CntFolderName,filesep,SubjectName,filesep,ExpDate,filesep,ExpName,'_',num2str(WhichExp),'.cnt'];
 
@@ -20,23 +20,18 @@ cfg=[];
 %数据集指定
 cfg.dataset = CntPath;
 
-%处理event
-event = ft_read_event(CntPath);
-zerocell = num2cell(zeros(1,20));
-[event(7:6:121).value]= zerocell{:};
-cfg.event = event;
 
 
 cfg.trialdef.eventtype = 'trigger';
-cfg.trialdef.eventvalue = 1:20;
-cfg.trialdef.prestim = 1;
-cfg.trialdef.poststim = 6; 
-cfg.trialfun = 'ft_trialfun_general';
+cfg.trialdef.eventvalue = 201:220;
+cfg.trialfun = 'ft_trialfun_snake';
+cfg.seglen = 6;
 
 cfg = ft_definetrial(cfg); 
 
 %将trial分段信息保存于变量trl中
 trl = cfg.trl; 
+
 
 %%
 %用z值去伪迹
@@ -117,7 +112,7 @@ ft_artifact_zvalue(cfg);
 %%
 %连续数据处理（重参考,低通滤波,detrend）
 cfg = [];
-
+cfg.demean = 'no';
 %指定导联
 cfg.channel = {'all','-HEO','-VEO','-EKG','-EMG','-M1','-M2','-CB1','-CB2'};
 %指定数据集
@@ -127,9 +122,9 @@ cfg.dataset = CntPath;
 cfg.reref = 'yes';
 cfg.refchannel = cfg.channel ;
 
-%100Hz低通滤波
-cfg.lpfilter = 'yes';
-cfg.lpfreq = 100;
+% %100Hz低通滤波
+% cfg.lpfilter = 'yes';
+% cfg.lpfreq = 100;
 
 %去除信号的线性趋势
 cfg.detrend = 'yes';
@@ -147,13 +142,13 @@ data1_ContinPreproc = ft_preprocessing(cfg);
 cfg = [];
 cfg.viewmode = 'vertical';
 cfg.fontsize = 0.02;
-cfg.blocksize = 10;
+cfg.continuous = 'no';
 ft_databrowser(cfg,data1_ContinPreproc);
 
 %%
 %数据分段
 cfg = [] ;
-
+cfg.demean = 'no';
 cfg.trl = trl ;
 
 data2_TrialPreproc = ft_redefinetrial(cfg,data1_ContinPreproc);
@@ -163,7 +158,7 @@ data2_TrialPreproc = ft_redefinetrial(cfg,data1_ContinPreproc);
 %%
 %工频陷波
 cfg = [];
-
+cfg.demean = 'no';
 %50Hz陷波滤波
 cfg.dftfilter = 'yes';
 cfg.dftfreq = 50;
@@ -176,7 +171,6 @@ data2_TrialPreproc = ft_preprocessing(cfg,data2_TrialPreproc);
 cfg = [];
 cfg.viewmode = 'vertical';
 cfg.fontsize = 0.02;
-cfg.blocksize = 7;
 ft_databrowser(cfg,data2_TrialPreproc);
 
 %%
@@ -184,6 +178,7 @@ ft_databrowser(cfg,data2_TrialPreproc);
 cfg = [];
 cfg.demean = 'no';
 cfg.method = 'runica';
+
 IcaComp = ft_componentanalysis(cfg,data2_TrialPreproc);
 
 cfg.layout    = 'quickcap64.mat';
@@ -191,35 +186,19 @@ cfg.comment   = 'no';
 cfg.component = 1:60;       % specify the component(s) that should be plotted
 cfg.viewmode = 'component';
 
-cfg.blocksize = 7;
 ft_databrowser(cfg, IcaComp);
 
 cfg = [];
-cfg.component = []; % to be removed component(s)
+cfg.component = 1; % to be removed component(s)
 data3_ICA = ft_rejectcomponent(cfg, IcaComp,  data2_TrialPreproc);
 
 cfg = [];
 
 cfg.viewmode = 'vertical';
 cfg.fontsize = 0.02;
-cfg.blocksize = 7;
 
 ft_databrowser(cfg,data3_ICA);
 
-
-
-cfg = [];
-cfg.demean = 'yes';
-cfg.baselinewindow = [-1 ,0];
-data4_Demean = ft_preprocessing(cfg,data3_ICA);
-
-cfg = [];
-
-cfg.viewmode = 'vertical';
-cfg.fontsize = 0.02;
-cfg.blocksize = 7;
-
-ft_databrowser(cfg,data4_Demean);
 
 
 % cfg = [];
@@ -235,22 +214,19 @@ ft_databrowser(cfg,data4_Demean);
 
 cfg = [];
 
-ERP  = ft_timelockanalysis(cfg, data4_Demean);
+ERP  = ft_timelockanalysis(cfg, data3_ICA);
 
-cfg.layout    = 'quickcap64.mat';
+cfg.layout = 'quickcap64.mat';
 cfg.showlabels = 'yes';
 cfg.showoutline = 'yes';
-cfg.baseline = [-1,0];
-cfg.baselinetype  = 'absolute';
+
 
 ft_multiplotER(cfg, ERP);
 
 cfg = [];
 cfg.layout = 'quickcap64.mat';
-cfg.baseline = [-1,0];
-cfg.baselinetype  = 'absolute';
-cfg.xlim = -1:1:6;
-ft_topoplotER(cfg,ERP);
+cfg.xlim = [0:1:6];
+a = ft_topoplotER(cfg,ERP);
 
 
 cfg = [];
@@ -260,33 +236,30 @@ cfg.method     = 'mtmconvol';
 cfg.foi        = 2:2:50;
 cfg.t_ftimwin  = 5./cfg.foi;
 cfg.tapsmofrq  = 0.4 *cfg.foi;
-cfg.toi        = -1:0.1:6;
-TFRmult = ft_freqanalysis(cfg, data4_Demean);
+cfg.toi        = 0:0.1:6;
+TFRmult = ft_freqanalysis(cfg, data3_ICA);
 
 cfg = [];
 cfg.ylim  = [2 50];
-cfg.baseline = [-1 0];  
-cfg.baselinetype = 'relative';	        
+cfg.baseline  = 'no';
 cfg.layout = 'quickcap64.mat';
 cfg.showoutline = 'yes';
 cfg.showlabels = 'yes';
 ft_multiplotTFR(cfg, TFRmult);
 
 cfg = [];
-cfg.xlim = [-1 0:0.5:3];
+cfg.xlim = [0:0.5:6];
 cfg.ylim  = [6 8];
-cfg.baseline = [-1 0];  
-cfg.baselinetype = 'absolute';	        
+cfg.baseline = 'no';   
 cfg.layout = 'quickcap64.mat';
 cfg.showoutline = 'yes';
 
 ft_topoplotTFR(cfg, TFRmult);
 
 cfg = [];
-cfg.xlim = -1:0.5:3;
+cfg.xlim = 0:0.5:3;
 cfg.ylim  = [10 15];
-cfg.baseline = [-1 0];  
-cfg.baselinetype = 'absolute';	             
+cfg.baseline = 'no';  	             
 cfg.layout = 'quickcap64.mat';
 cfg.showoutline = 'yes';
 figure;
