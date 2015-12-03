@@ -1,9 +1,8 @@
-%zkdSnake1分析脚本
+%zkdSnake3分析脚本
 clc;
 clear;
 %%
 %实验数据选择
-
 
 CntFolderName = 'CntFiles';
 SubjectName = 'zkd';
@@ -125,9 +124,9 @@ cfg.refchannel = cfg.channel ;
 % %100Hz低通滤波
 % cfg.lpfilter = 'yes';
 % cfg.lpfreq = 100;
-
-%去除信号的线性趋势
-cfg.detrend = 'yes';
+% 
+% %去除信号的线性趋势
+% cfg.detrend = 'yes';
 
 data1_ContinPreproc = ft_preprocessing(cfg);
 
@@ -160,8 +159,8 @@ data2_TrialPreproc = ft_redefinetrial(cfg,data1_ContinPreproc);
 cfg = [];
 cfg.demean = 'no';
 %50Hz陷波滤波
-cfg.dftfilter = 'yes';
-cfg.dftfreq = 50;
+% cfg.dftfilter = 'yes';
+% cfg.dftfreq = 50;
 cfg.continuous = 'no';
 
 
@@ -176,6 +175,7 @@ ft_databrowser(cfg,data2_TrialPreproc);
 %%
 %ICA去眼电
 cfg = [];
+cfg.trials = 1;
 cfg.demean = 'no';
 cfg.method = 'runica';
 
